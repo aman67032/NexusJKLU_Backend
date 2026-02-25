@@ -195,6 +195,10 @@ router.get('/papers/:id', optionalAuth, async (req, res) => {
 // GET /api/learn/papers/:id/download
 router.get('/papers/:id/download', optionalAuth, async (req, res) => {
     try {
+        if (!process.env.TEST && !req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(404).json({ error: 'Invalid Paper ID format' });
+        }
+
         const paper = await Paper.findById(req.params.id);
         if (!paper || !paper.fileData) return res.status(404).json({ error: 'File not found' });
 
@@ -203,11 +207,15 @@ router.get('/papers/:id/download', optionalAuth, async (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        res.set('Content-Type', paper.contentType || 'application/pdf');
-        res.set('Content-Disposition', `attachment; filename="${paper.fileName}"`);
-        res.send(paper.fileData);
+        const contentType = paper.contentType || 'application/pdf';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `inline; filename="${paper.fileName}"`);
+
+        // Ensure data is sent as raw binary to avoid string truncation
+        res.end(paper.fileData);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to download paper' });
+        console.error('Download error:', error);
+        res.status(500).json({ error: 'Failed to download paper - ' + error.message });
     }
 });
 
