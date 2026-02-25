@@ -20,27 +20,45 @@ const PORT = process.env.PORT || 5000;
 // Trust proxy (for Vercel / reverse proxy)
 app.set('trust proxy', 1);
 
-// Security
-app.use(securityHeaders);
-app.use(generalLimiter);
-
-// CORS
+// --- 1. CORS (Must be first to handle preflights) ---
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : [process.env.FRONTEND_URL || 'http://localhost:3000', 'https://nexus-jklu.vercel.app'];
+    : [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'https://nexus-jklu.vercel.app',
+        'https://nexus-jklu-backend.vercel.app'
+    ];
 
 app.use(cors({
     origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(new Error('CORS policy violation'), false);
+
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (allowed.includes('*')) {
+                const regex = new RegExp('^' + allowed.replace(/\*/g, '.*') + '$');
+                return regex.test(origin);
+            }
+            return allowed === origin;
+        }) || origin.endsWith('.vercel.app'); // Flexible for Vercel previews
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.warn(`🚨 CORS blocked for origin: ${origin}`);
+            callback(new Error('CORS policy violation'), false);
         }
-        return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['set-cookie']
 }));
+
+// --- 2. Security Headers & Rate Limiting ---
+app.use(securityHeaders);
+app.use(generalLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
