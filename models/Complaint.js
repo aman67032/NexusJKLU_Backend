@@ -38,6 +38,8 @@ const complaintSchema = new mongoose.Schema({
     attachments: [String],
     upvotes: { type: Number, default: 0 },
     upvotedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    adminSeen: { type: Boolean, default: false },
+    adminReadAt: { type: Date }
 }, {
     timestamps: true,
 });

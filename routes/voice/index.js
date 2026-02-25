@@ -206,6 +206,41 @@ router.put('/admin/complaints/:id', authenticate, requireRole('admin', 'voice_ad
     }
 });
 
+// PUT /api/voice/admin/complaints/:id/seen — mark complaint as seen by admin
+router.put('/admin/complaints/:id/seen', authenticate, requireRole('admin', 'voice_admin'), async (req, res) => {
+    try {
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            { $set: { adminSeen: true, adminReadAt: new Date() } },
+            { new: true }
+        ).populate('userId', 'name email').populate('respondedBy', 'name');
+
+        if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+        res.json(complaint);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to mark as seen' });
+    }
+});
+
+// PUT /api/voice/admin/complaints/:id/transfer — transfer complaint to another category
+router.put('/admin/complaints/:id/transfer', authenticate, requireRole('admin', 'voice_admin'), async (req, res) => {
+    try {
+        const { category } = req.body;
+        if (!category) return res.status(400).json({ error: 'Category is required' });
+
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            { $set: { category } },
+            { new: true }
+        ).populate('userId', 'name email').populate('respondedBy', 'name');
+
+        if (!complaint) return res.status(404).json({ error: 'Complaint not found' });
+        res.json(complaint);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to transfer complaint' });
+    }
+});
+
 // GET /api/voice/admin/stats
 router.get('/admin/stats', authenticate, requireRole('admin', 'voice_admin'), async (req, res) => {
     try {
