@@ -27,7 +27,7 @@ app.use(generalLimiter);
 // CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : [process.env.FRONTEND_URL || 'http://localhost:3000'];
+    : [process.env.FRONTEND_URL || 'http://localhost:3000', 'https://nexus-jklu.vercel.app/'];
 
 app.use(cors({
     origin: function (origin, callback) {
