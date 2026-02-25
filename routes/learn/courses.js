@@ -192,6 +192,25 @@ router.get('/papers/:id', optionalAuth, async (req, res) => {
     }
 });
 
+// GET /api/learn/papers/:id/download
+router.get('/papers/:id/download', optionalAuth, async (req, res) => {
+    try {
+        const paper = await Paper.findById(req.params.id);
+        if (!paper || !paper.fileData) return res.status(404).json({ error: 'File not found' });
+
+        // Non-admin can only download approved papers
+        if (paper.status !== 'approved' && (!req.user || !req.user.roles?.some(r => ['admin', 'learn_admin'].includes(r)))) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        res.set('Content-Type', paper.contentType || 'application/pdf');
+        res.set('Content-Disposition', `attachment; filename="${paper.fileName}"`);
+        res.send(paper.fileData);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to download paper' });
+    }
+});
+
 // DELETE /api/learn/papers/:id
 router.delete('/papers/:id', authenticate, requireRole('admin', 'learn_admin'), async (req, res) => {
     try {
