@@ -6,6 +6,7 @@ import { securityHeaders, generalLimiter, sanitizeInputs } from './middleware/se
 
 // Routes
 import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
 import learnCoursesRoutes from './routes/learn/courses.js';
 import learnContestsRoutes from './routes/learn/contests.js';
 import councilRoutes from './routes/council/index.js';
@@ -77,6 +78,7 @@ app.get('/health', async (req, res) => {
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/learn', learnCoursesRoutes);
 app.use('/api/learn', learnContestsRoutes);
 app.use('/api/council', councilRoutes);
