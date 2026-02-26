@@ -45,3 +45,24 @@ export const canManageLearnPortal = (role) => {
 export const canManageVoicePortal = (role) => {
     return ['super_admin', 'admin', 'voice_admin'].includes(role);
 };
+
+export const authorize = (permissionCheck) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const userRoles = req.user.roles || [];
+        // Allow if any of the user's roles pass the specific permission check
+        // Super Admins bypass implicitly in most checks, but we can enforce it here too just in case
+        const hasPermission = userRoles.some(role =>
+            permissionCheck(role) || ['super_admin', 'admin'].includes(role)
+        );
+
+        if (!hasPermission) {
+            return res.status(403).json({ error: 'Insufficient permissions' });
+        }
+
+        next();
+    };
+};
