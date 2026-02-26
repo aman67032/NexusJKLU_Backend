@@ -21,7 +21,23 @@ const userSchema = new mongoose.Schema({
     roles: {
         type: [String],
         default: ['student'],
-        enum: ['student', 'admin', 'council_admin', 'voice_admin', 'learn_admin', 'coordinator', 'coding_ta'],
+        enum: [
+            'student',
+            'admin',
+            'super_admin',
+            'council_admin',
+            'council_president',
+            'head_student_affairs',
+            'executive_student_affairs',
+            'club_chair',
+            'club_co_chair',
+            'club_secretary',
+            'club_general_secretary',
+            'voice_admin',
+            'learn_admin',
+            'coordinator',
+            'coding_ta'
+        ],
     },
     profile: {
         age: Number,

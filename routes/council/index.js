@@ -7,7 +7,9 @@ import Certificate from '../../models/Certificate.js';
 import Coordinator from '../../models/Coordinator.js';
 import Notification from '../../models/Notification.js';
 import User from '../../models/User.js';
-import { authenticate, requireRole, optionalAuth } from '../../middleware/auth.js';
+import { authenticate, optionalAuth } from '../../middleware/auth.js';
+import { authorize } from '../../middleware/permissions.js';
+import * as perms from '../../middleware/permissions.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -36,7 +38,7 @@ router.get('/councils/:slug', async (req, res) => {
 });
 
 // POST /api/council/councils (admin)
-router.post('/councils', authenticate, requireRole('admin', 'council_admin'),
+router.post('/councils', authenticate, authorize(perms.canManageCouncils),
     [body('name').trim().notEmpty(), body('slug').trim().notEmpty()],
     async (req, res) => {
         try {
@@ -53,7 +55,7 @@ router.post('/councils', authenticate, requireRole('admin', 'council_admin'),
 );
 
 // PUT /api/council/councils/:id
-router.put('/councils/:id', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.put('/councils/:id', authenticate, authorize(perms.canManageCouncils), async (req, res) => {
     try {
         const council = await Council.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
         if (!council) return res.status(404).json({ error: 'Council not found' });
@@ -95,7 +97,7 @@ router.get('/clubs/:slug', async (req, res) => {
 });
 
 // POST /api/council/clubs (admin)
-router.post('/clubs', authenticate, requireRole('admin', 'council_admin'),
+router.post('/clubs', authenticate, authorize(perms.canManageClubs),
     [body('name').trim().notEmpty(), body('slug').trim().notEmpty()],
     async (req, res) => {
         try {
@@ -112,7 +114,7 @@ router.post('/clubs', authenticate, requireRole('admin', 'council_admin'),
 );
 
 // PUT /api/council/clubs/:id
-router.put('/clubs/:id', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.put('/clubs/:id', authenticate, authorize(perms.canManageClubs), async (req, res) => {
     try {
         const club = await Club.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
         if (!club) return res.status(404).json({ error: 'Club not found' });
@@ -169,7 +171,7 @@ router.get('/events/:id', async (req, res) => {
 });
 
 // POST /api/council/events
-router.post('/events', authenticate, requireRole('admin', 'council_admin', 'coordinator'),
+router.post('/events', authenticate, authorize(perms.canCreateEvents),
     [body('title').trim().notEmpty(), body('date').notEmpty()],
     async (req, res) => {
         try {
@@ -190,7 +192,7 @@ router.post('/events', authenticate, requireRole('admin', 'council_admin', 'coor
 );
 
 // PUT /api/council/events/:id
-router.put('/events/:id', authenticate, requireRole('admin', 'council_admin', 'coordinator'), async (req, res) => {
+router.put('/events/:id', authenticate, authorize(perms.canCreateEvents), async (req, res) => {
     try {
         const event = await Event.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
         if (!event) return res.status(404).json({ error: 'Event not found' });
@@ -201,7 +203,7 @@ router.put('/events/:id', authenticate, requireRole('admin', 'council_admin', 'c
 });
 
 // PUT /api/council/events/:id/approve
-router.put('/events/:id/approve', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.put('/events/:id/approve', authenticate, authorize(perms.canApproveEvents), async (req, res) => {
     try {
         const event = await Event.findByIdAndUpdate(
             req.params.id,
@@ -239,7 +241,7 @@ router.post('/events/:id/register', authenticate, async (req, res) => {
 });
 
 // DELETE /api/council/events/:id
-router.delete('/events/:id', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.delete('/events/:id', authenticate, authorize(perms.canApproveEvents), async (req, res) => {
     try {
         const event = await Event.findByIdAndDelete(req.params.id);
         if (!event) return res.status(404).json({ error: 'Event not found' });
@@ -264,7 +266,7 @@ router.get('/certificates', authenticate, async (req, res) => {
 });
 
 // POST /api/council/certificates (admin)
-router.post('/certificates', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.post('/certificates', authenticate, authorize(perms.canGenerateCertificates), async (req, res) => {
     try {
         const { userId, eventId, title, description, issuedBy, type } = req.body;
         const certificate = new Certificate({
@@ -317,7 +319,7 @@ router.get('/coordinators', async (req, res) => {
 });
 
 // POST /api/council/coordinators (admin)
-router.post('/coordinators', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.post('/coordinators', authenticate, authorize(perms.canManageClubs), async (req, res) => {
     try {
         const coordinator = new Coordinator(req.body);
         await coordinator.save();
@@ -363,7 +365,7 @@ router.put('/notifications/:id/read', authenticate, async (req, res) => {
 // ===== ANALYTICS =====
 
 // GET /api/council/analytics
-router.get('/analytics', authenticate, requireRole('admin', 'council_admin'), async (req, res) => {
+router.get('/analytics', authenticate, authorize(perms.canViewAnalytics), async (req, res) => {
     try {
         const [totalEvents, totalClubs, totalCouncils, upcomingEvents, pendingEvents] = await Promise.all([
             Event.countDocuments(),

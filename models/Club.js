@@ -16,6 +16,10 @@ const clubSchema = new mongoose.Schema({
     president: String,
     vicePresident: String,
     faculty: String,
+    chairId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    coChairId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    secretaryId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    generalSecretaryId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     members: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         role: { type: String, default: 'member' },

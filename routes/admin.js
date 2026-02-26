@@ -4,11 +4,14 @@ import Paper from '../models/Paper.js';
 import Event from '../models/Event.js';
 import Complaint from '../models/Complaint.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
+import { authorize, canAssignRoles } from '../middleware/permissions.js';
 
 const router = express.Router();
 
 // Middleware to ensure user is at least an admin of some sort
-const requireAnyAdmin = requireRole('admin', 'council_admin', 'learn_admin', 'voice_admin');
+// We keep the old requireAnyAdmin for simple basic 'is this an admin' checks 
+// where specific module permissions aren't needed.
+const requireAnyAdmin = requireRole('admin', 'super_admin', 'council_admin', 'learn_admin', 'voice_admin');
 
 // GET /api/admin/stats
 // Returns global statistics for the overview dashboard
@@ -31,7 +34,7 @@ router.get('/stats', authenticate, requireAnyAdmin, async (req, res) => {
 
 // GET /api/admin/users
 // Returns a list of users, searchable and paginated
-router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
+router.get('/users', authenticate, authorize(canAssignRoles), async (req, res) => {
     try {
         const { search, page = 1, limit = 20 } = req.query;
         let query = {};
@@ -68,7 +71,7 @@ router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
 
 // PUT /api/admin/users/:id/role
 // Update a user's roles
-router.put('/users/:id/role', authenticate, requireRole('admin'), async (req, res) => {
+router.put('/users/:id/role', authenticate, authorize(canAssignRoles), async (req, res) => {
     try {
         const { roles } = req.body;
 

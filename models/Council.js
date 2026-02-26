@@ -8,6 +8,10 @@ const councilSchema = new mongoose.Schema({
     president: String,
     vicePresident: String,
     faculty: String,
+    adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    presidentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    headStudentAffairsId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    executiveStudentAffairsId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isActive: { type: Boolean, default: true },
 }, {
