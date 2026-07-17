@@ -11,6 +11,8 @@ import learnCoursesRoutes from './routes/learn/courses.js';
 import learnContestsRoutes from './routes/learn/contests.js';
 import councilRoutes from './routes/council/index.js';
 import voiceRoutes from './routes/voice/index.js';
+import busRoutes from './routes/bus.js';
+
 
 dotenv.config();
 
@@ -101,6 +103,8 @@ app.use('/api/learn', learnCoursesRoutes);
 app.use('/api/learn', learnContestsRoutes);
 app.use('/api/council', councilRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/bus', busRoutes);
+
 
 // Error handling
 app.use((err, req, res, next) => {

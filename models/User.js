@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema({
         rollNo: String,
         studentId: String,
         phone: String,
+        gender: String,
     },
     emailVerified: { type: Boolean, default: false },
     idVerified: { type: Boolean, default: false },
