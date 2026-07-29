@@ -12,6 +12,7 @@ import learnContestsRoutes from './routes/learn/contests.js';
 import councilRoutes from './routes/council/index.js';
 import voiceRoutes from './routes/voice/index.js';
 import busRoutes from './routes/bus.js';
+import shuttleRoutes from './routes/shuttle.js';
 
 
 dotenv.config();
@@ -74,7 +75,7 @@ app.get('/', (req, res) => {
     res.json({
         message: '🚀 NexusJKLU API is running',
         version: '1.0.0',
-        modules: ['learn', 'council', 'voice'],
+        modules: ['learn', 'council', 'voice', 'transport'],
         health: '/health',
     });
 });
@@ -104,6 +105,7 @@ app.use('/api/learn', learnContestsRoutes);
 app.use('/api/council', councilRoutes);
 app.use('/api/voice', voiceRoutes);
 app.use('/api/bus', busRoutes);
+app.use('/api/shuttle', shuttleRoutes);
 
 
 // Error handling
@@ -149,6 +151,7 @@ const startServer = async () => {
             console.log(`📚 Learn: /api/learn/*`);
             console.log(`🏛  Council: /api/council/*`);
             console.log(`🗣  Voice: /api/voice/*`);
+            console.log(`🚌 Transport: /api/bus/*, /api/shuttle/*`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

@@ -4,82 +4,408 @@ import Bus from './models/Bus.js';
 
 dotenv.config();
 
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb+srv://solomaze67032_db_user:fQmA99z6lzPVbiAF@cluster0.lnefwyf.mongodb.net/nexusjklu';
+
 const busRoutes = [
     {
-        routeNumber: "B101",
-        routeName: "JKLU ➔ Mansarovar Metro",
-        stops: ["JKLU Campus", "Mahapura Patia", "Bhankrota", "Heerapura", "Mansarovar Metro"],
-        timings: ["08:30 AM", "12:15 PM", "05:30 PM", "07:00 PM"],
-        driverName: "Ramesh Singh",
-        driverPhone: "+91 9876543210",
-        busNumber: "RJ-14-PB-1234",
-        status: "active",
-        liveLocation: {
-            lat: 26.8390,
-            lng: 75.6880,
-            lastUpdated: new Date()
-        },
-        eta: "8 mins"
+        routeNumber: 'Route 1',
+        routeName: 'VT Road - Patrakar Colony - Narayan Vihar',
+        vehicleNumber: 'RJ14PE0972',
+        driverName: 'AJIT SINGH',
+        driverPhone: '7976061630',
+        firstPickupPoint: 'V.T.Road Near Tejaji Temple, New Sanganer Road',
+        stops: [
+            { name: 'V.T. Road New Sanganer Road', pickupTime: '', order: 1 },
+            { name: 'Bharat Mata Circle', pickupTime: '', order: 2 },
+            { name: 'New Patrakar Colony', pickupTime: '', order: 3 },
+            { name: 'Kharbas Circle', pickupTime: '', order: 4 },
+            { name: 'Hotel Hayyat', pickupTime: '', order: 5 },
+            { name: 'Kesar Circle', pickupTime: '', order: 6 },
+            { name: 'Anukampa Platina Circle', pickupTime: '', order: 7 },
+            { name: 'Choudhary Paradise', pickupTime: '', order: 8 },
+            { name: 'Garden 41', pickupTime: '', order: 9 },
+            { name: 'Koteja Building', pickupTime: '', order: 10 },
+            { name: 'Nakoda Glass', pickupTime: '', order: 11 },
+            { name: 'Narayan Vihar', pickupTime: '', order: 12 },
+            { name: 'Taru Chaaya Residency', pickupTime: '', order: 13 },
+            { name: 'JKLU Campus', pickupTime: '', order: 14 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
     },
     {
-        routeNumber: "B102",
-        routeName: "Mansarovar Metro ➔ JKLU",
-        stops: ["Mansarovar Metro", "Heerapura", "Bhankrota", "Mahapura Patia", "JKLU Campus"],
-        timings: ["07:30 AM", "09:30 AM", "01:30 PM", "06:30 PM"],
-        driverName: "Suresh Sharma",
-        driverPhone: "+91 9988776655",
-        busNumber: "RJ-14-PB-5678",
-        status: "scheduled",
-        liveLocation: {
-            lat: 26.8225,
-            lng: 75.6454,
-            lastUpdated: new Date()
-        },
-        eta: "--"
+        routeNumber: 'Route 2',
+        routeName: 'Mansarovar',
+        vehicleNumber: 'RJ14PA0984',
+        driverName: 'SANDEEP KUMAR',
+        driverPhone: '7364073076',
+        firstPickupPoint: 'Maharani Farm, Durgapura, Near Petrol Pump',
+        stops: [
+            { name: 'Maharani Farm - D Mart', pickupTime: '', order: 1 },
+            { name: 'Dwarkadas Park', pickupTime: '', order: 2 },
+            { name: 'Vijay Path', pickupTime: '', order: 3 },
+            { name: 'Patel Marg', pickupTime: '', order: 4 },
+            { name: 'Paramhansh Marg', pickupTime: '', order: 5 },
+            { name: 'Modern School', pickupTime: '', order: 6 },
+            { name: 'Neerja Modi School', pickupTime: '', order: 7 },
+            { name: 'Swarn Path Madhyam Marg', pickupTime: '', order: 8 },
+            { name: 'Swarnpath New Sanganer Road', pickupTime: '', order: 9 },
+            { name: 'Kisan Dharam Kanta', pickupTime: '', order: 10 },
+            { name: 'Nivik Hospital', pickupTime: '', order: 11 },
+            { name: 'Kamla Nehru Phuliya', pickupTime: '', order: 12 },
+            { name: 'JKLU Campus', pickupTime: '', order: 13 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
     },
     {
-        routeNumber: "B201",
-        routeName: "JKLU ➔ Sindhi Camp (Weekend)",
-        stops: ["JKLU Campus", "Bhankrota", "200 Feet Bypass", "Ajmer Pulia", "Sindhi Camp"],
-        timings: ["09:00 AM", "02:00 PM", "06:00 PM"],
-        driverName: "Satnam Singh",
-        driverPhone: "+91 8877665544",
-        busNumber: "RJ-14-PB-9999",
-        status: "scheduled",
-        liveLocation: {
-            lat: 26.8225,
-            lng: 75.6454,
-            lastUpdated: new Date()
-        },
-        eta: "--"
+        routeNumber: 'Route 3',
+        routeName: 'Sanganer - Jagatpura - Malviya Nagar',
+        vehicleNumber: 'RJ39PA2009',
+        driverName: 'ROOP NARAYAN',
+        driverPhone: '8740837820',
+        firstPickupPoint: 'Airport Circle, Under Sanganer Pulia, Sanganer',
+        stops: [
+            { name: 'Airport Circle Sanganer', pickupTime: '', order: 1 },
+            { name: 'Pinjrapole Gaushala', pickupTime: '', order: 2 },
+            { name: 'Pratap Dwar', pickupTime: '', order: 3 },
+            { name: 'Khumbha Marg', pickupTime: '', order: 4 },
+            { name: 'India Gate', pickupTime: '', order: 5 },
+            { name: 'Sitapura', pickupTime: '', order: 6 },
+            { name: 'Dwarkapuri', pickupTime: '', order: 7 },
+            { name: 'Jagatpura Police Station', pickupTime: '', order: 8 },
+            { name: 'Akshay Patra', pickupTime: '', order: 9 },
+            { name: '7 no. Chouraha', pickupTime: '', order: 10 },
+            { name: 'SKIT College Circle', pickupTime: '', order: 11 },
+            { name: 'Jagatpura Flyover', pickupTime: '', order: 12 },
+            { name: 'Model Town', pickupTime: '', order: 13 },
+            { name: 'Balaji Mod', pickupTime: '', order: 14 },
+            { name: 'Apex Circle', pickupTime: '', order: 15 },
+            { name: 'Calgiri Road', pickupTime: '', order: 16 },
+            { name: 'Malviya Nagar Police Station', pickupTime: '', order: 17 },
+            { name: 'Hari Marg', pickupTime: '', order: 18 },
+            { name: 'Nandpuri Underpass', pickupTime: '', order: 19 },
+            { name: 'EHCC', pickupTime: '', order: 20 },
+            { name: 'Jawahar Circle', pickupTime: '', order: 21 },
+            { name: 'Clarks Amer', pickupTime: '', order: 22 },
+            { name: 'WTP', pickupTime: '', order: 23 },
+            { name: 'Jaipuria Hospital', pickupTime: '', order: 24 },
+            { name: 'Milap Nagar', pickupTime: '', order: 25 },
+            { name: 'Lalsingh Judo Colony', pickupTime: '', order: 26 },
+            { name: 'GopalPura Police Chowki', pickupTime: '', order: 27 },
+            { name: 'Bhandari Hospital', pickupTime: '', order: 28 },
+            { name: 'Ganga Jamuna Petrol Pump', pickupTime: '', order: 29 },
+            { name: 'Mansarovar Metro Station', pickupTime: '', order: 30 },
+            { name: 'JKLU Campus', pickupTime: '', order: 31 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 4',
+        routeName: 'Tonk Road - 22 Godown - Nirman Nagar',
+        vehicleNumber: 'RJ14PD4238',
+        driverName: 'RAJU VERMA',
+        driverPhone: '9828053114',
+        firstPickupPoint: 'Kamal and Company, Kirti Nagar Mod, Tonk Road',
+        stops: [
+            { name: 'Kamal and Company Tonk Road', pickupTime: '', order: 1 },
+            { name: 'Pinkcity Honda', pickupTime: '', order: 2 },
+            { name: 'Tonk Pulia', pickupTime: '', order: 3 },
+            { name: 'Laxmi Mandir Tiraha', pickupTime: '', order: 4 },
+            { name: 'JP Phatak', pickupTime: '', order: 5 },
+            { name: 'Imliwala Phatak', pickupTime: '', order: 6 },
+            { name: 'Sahakar Road', pickupTime: '', order: 7 },
+            { name: '22 Godam Puliya', pickupTime: '', order: 8 },
+            { name: 'Nandpuri MJRP', pickupTime: '', order: 9 },
+            { name: 'Swez Farm', pickupTime: '', order: 10 },
+            { name: 'Vivek Vihar Metro Station', pickupTime: '', order: 11 },
+            { name: 'Devi Nagar Mod', pickupTime: '', order: 12 },
+            { name: 'Katewa Nagar Mod', pickupTime: '', order: 13 },
+            { name: 'Laziz Restaurant', pickupTime: '', order: 14 },
+            { name: 'Shyam Nagar', pickupTime: '', order: 15 },
+            { name: 'Dana Pani Restaurant', pickupTime: '', order: 16 },
+            { name: 'Kings Road', pickupTime: '', order: 17 },
+            { name: 'Chaabra Restaurant', pickupTime: '', order: 18 },
+            { name: 'Rani Sati Nagar', pickupTime: '', order: 19 },
+            { name: '200 ft Bypass', pickupTime: '', order: 20 },
+            { name: 'JKLU Campus', pickupTime: '', order: 21 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 5',
+        routeName: 'Ajmeri Gate - Rajapark - C-Scheme',
+        vehicleNumber: 'RJ14PD4239',
+        driverName: 'JITENDRA',
+        driverPhone: '8619839140',
+        firstPickupPoint: 'Ajmeri Gate, Out Side Golcha Mall, Near Yaadgaar M.I.Road',
+        stops: [
+            { name: 'Ajmeri Gate', pickupTime: '', order: 1 },
+            { name: 'Saganeri Gate', pickupTime: '', order: 2 },
+            { name: 'Ghat Gate', pickupTime: '', order: 3 },
+            { name: 'Pink Square', pickupTime: '', order: 4 },
+            { name: 'Ramada Hotel', pickupTime: '', order: 5 },
+            { name: 'Parnami Mandir', pickupTime: '', order: 6 },
+            { name: 'Moti Dungri Road', pickupTime: '', order: 7 },
+            { name: 'Trimurti Circle', pickupTime: '', order: 8 },
+            { name: 'Birla Mandir', pickupTime: '', order: 9 },
+            { name: 'Rambagh Circle', pickupTime: '', order: 10 },
+            { name: 'RBI', pickupTime: '', order: 11 },
+            { name: 'Narayan Singh Circle', pickupTime: '', order: 12 },
+            { name: 'Statue Circle', pickupTime: '', order: 13 },
+            { name: 'Chomu House Circle', pickupTime: '', order: 14 },
+            { name: 'Hathroi', pickupTime: '', order: 15 },
+            { name: 'Mission Compound', pickupTime: '', order: 16 },
+            { name: 'Ajmeri Pulia', pickupTime: '', order: 17 },
+            { name: '200ft Bypass', pickupTime: '', order: 18 },
+            { name: 'JKLU Campus', pickupTime: '', order: 19 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 6',
+        routeName: 'Benar Road - Murlipura - Railway Station',
+        vehicleNumber: 'RJ14PD7838',
+        driverName: 'VIJAY',
+        driverPhone: '9649289990',
+        firstPickupPoint: 'Ninder-Benar Railway Station, Boytawala, Benar Road',
+        stops: [
+            { name: 'Benar Railway Station', pickupTime: '', order: 1 },
+            { name: 'Sitawali Phatak', pickupTime: '', order: 2 },
+            { name: 'Shyam Nagar (Benar)', pickupTime: '', order: 3 },
+            { name: '5 no. Bypass', pickupTime: '', order: 4 },
+            { name: 'Budania Chauraha - Murlipura', pickupTime: '', order: 5 },
+            { name: 'Kedia Chouraha - Murlipura', pickupTime: '', order: 6 },
+            { name: 'Path No. 07', pickupTime: '', order: 7 },
+            { name: 'Khetan Hospital', pickupTime: '', order: 8 },
+            { name: 'Dher Ka Balaji', pickupTime: '', order: 9 },
+            { name: 'Bansal Furniture', pickupTime: '', order: 10 },
+            { name: 'Amba Bari Circle', pickupTime: '', order: 11 },
+            { name: 'Panipatch Tiraha', pickupTime: '', order: 12 },
+            { name: 'Chinkara Canteen', pickupTime: '', order: 13 },
+            { name: 'Railway Station', pickupTime: '', order: 14 },
+            { name: 'Ganpathi Nagar', pickupTime: '', order: 15 },
+            { name: 'Hasanpura Pulia', pickupTime: '', order: 16 },
+            { name: '4 Number Dispensary', pickupTime: '', order: 17 },
+            { name: 'Sodala', pickupTime: '', order: 18 },
+            { name: '200 Feet Bypass', pickupTime: '', order: 19 },
+            { name: 'JKLU Campus', pickupTime: '', order: 20 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 7',
+        routeName: 'Shastri Nagar - Vidhydhar Nagar - VKI',
+        vehicleNumber: 'RJ14PE8005',
+        driverName: 'SONU',
+        driverPhone: '9667203995',
+        firstPickupPoint: 'Rajasthan Police Academy, Nehru Nagar',
+        stops: [
+            { name: 'RPA Shastri Nagar', pickupTime: '', order: 1 },
+            { name: 'Kanwatia Circle', pickupTime: '', order: 2 },
+            { name: 'Mandir Mod Circle', pickupTime: '', order: 3 },
+            { name: 'National Handloom - Vidhyadhar Nagar', pickupTime: '', order: 4 },
+            { name: 'VDN Police Station', pickupTime: '', order: 5 },
+            { name: 'Parshuram Circle', pickupTime: '', order: 6 },
+            { name: 'Alka Cinema', pickupTime: '', order: 7 },
+            { name: 'VKI Road No. 01 to 14', pickupTime: '', order: 8 },
+            { name: 'Loha Mandi', pickupTime: '', order: 9 },
+            { name: '5 no. Express Highway', pickupTime: '', order: 10 },
+            { name: 'JKLU Campus', pickupTime: '', order: 11 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 8',
+        routeName: 'Jhotwara - Khirni Phatak',
+        vehicleNumber: 'RJ23PA0727',
+        driverName: 'SHIVRAM CHOUDHARY',
+        driverPhone: '9929463055',
+        firstPickupPoint: 'Jhotwara Police Station, Jhotwara Industrial Area',
+        stops: [
+            { name: 'Jhotwara Police Station', pickupTime: '', order: 1 },
+            { name: 'Dadi ka Phatak', pickupTime: '', order: 2 },
+            { name: 'Nagal Jaisa Bohra Mod', pickupTime: '', order: 3 },
+            { name: 'Niwaru Mod', pickupTime: '', order: 4 },
+            { name: 'Kanta Chourha - Jhotwara', pickupTime: '', order: 5 },
+            { name: 'Joshi Marg - Jhotwara', pickupTime: '', order: 6 },
+            { name: 'Manohar Palace Hotel', pickupTime: '', order: 7 },
+            { name: 'Kalwar Police Station', pickupTime: '', order: 8 },
+            { name: 'Rood Mahal Marriage Garden', pickupTime: '', order: 9 },
+            { name: 'Khirni Phatak', pickupTime: '', order: 10 },
+            { name: 'Panchyawala Mod (Lalra Petrol Pump)', pickupTime: '', order: 11 },
+            { name: 'Bajari Mandi Mod', pickupTime: '', order: 12 },
+            { name: 'Gandhi Path Mod', pickupTime: '', order: 13 },
+            { name: 'Dhawas Mod', pickupTime: '', order: 14 },
+            { name: 'Karni Palace', pickupTime: '', order: 15 },
+            { name: 'Hotel Highway Kings', pickupTime: '', order: 16 },
+            { name: 'JKLU Campus', pickupTime: '', order: 17 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 9',
+        routeName: 'Niwaru - Kalwar - Bad Ka Balaji',
+        vehicleNumber: 'RJ14PE6849',
+        driverName: 'MUKESH',
+        driverPhone: '9602547598',
+        firstPickupPoint: 'Niwaru Army Area',
+        stops: [
+            { name: 'Niwaru Army Cantt.', pickupTime: '', order: 1 },
+            { name: 'Vaidh ji Ka Chouraha (Niwaru)', pickupTime: '', order: 2 },
+            { name: 'Shekawat Marg', pickupTime: '', order: 3 },
+            { name: 'Rawan Gate (Kalwar Road)', pickupTime: '', order: 4 },
+            { name: 'Kardhani', pickupTime: '', order: 5 },
+            { name: 'Govindpura', pickupTime: '', order: 6 },
+            { name: 'Hathoj', pickupTime: '', order: 7 },
+            { name: 'Manchwa - Sushant City', pickupTime: '', order: 8 },
+            { name: 'Siwar Mod', pickupTime: '', order: 9 },
+            { name: 'Bad Ka Balaji (Near Toll Tax)', pickupTime: '', order: 10 },
+            { name: 'JKLU Campus', pickupTime: '', order: 11 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 10',
+        routeName: 'Chitrakoot - Vaishali Nagar - Khatipura',
+        vehicleNumber: 'RJ14PC0073',
+        driverName: 'KISHAN KUMAR',
+        driverPhone: '9782612021',
+        firstPickupPoint: 'Pratap Stadium, Chitrakoot',
+        stops: [
+            { name: 'Chitrakoot Stadium', pickupTime: '', order: 1 },
+            { name: 'Akshardham', pickupTime: '', order: 2 },
+            { name: 'Amrapali Circle - Vaishali Nagar', pickupTime: '', order: 3 },
+            { name: 'Jharkhand Mod', pickupTime: '', order: 4 },
+            { name: 'Khatipura Tiraha', pickupTime: '', order: 5 },
+            { name: 'Deep Hospital', pickupTime: '', order: 6 },
+            { name: 'Jain Medical Store - Jhotwara', pickupTime: '', order: 7 },
+            { name: 'Chand Bihari Nagar', pickupTime: '', order: 8 },
+            { name: 'Jaswant Nagar', pickupTime: '', order: 9 },
+            { name: 'Vaishali Circle', pickupTime: '', order: 10 },
+            { name: 'Tagore Public School', pickupTime: '', order: 11 },
+            { name: 'Nursary Circle', pickupTime: '', order: 12 },
+            { name: 'Global Hospital - Gandhi Path', pickupTime: '', order: 13 },
+            { name: 'Malls of Jaipur', pickupTime: '', order: 14 },
+            { name: 'Chitrakoot Sector-03', pickupTime: '', order: 15 },
+            { name: 'JPS High School', pickupTime: '', order: 16 },
+            { name: 'Karni Vihar Thana', pickupTime: '', order: 17 },
+            { name: 'JKLU Campus', pickupTime: '', order: 18 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 11',
+        routeName: 'Sirsi Road - Rangoli Garden',
+        vehicleNumber: 'RJ14PG8776',
+        driverName: 'RADHESHYAM',
+        driverPhone: '9602387883',
+        firstPickupPoint: 'Panchyawala, Sirsi Road',
+        stops: [
+            { name: 'Panchyawala - Sirsi Road', pickupTime: '', order: 1 },
+            { name: 'Kanakpura Railway Station', pickupTime: '', order: 2 },
+            { name: 'Royal Green Residency - Sirsi Road', pickupTime: '', order: 3 },
+            { name: 'Teolar School - Lalarpura', pickupTime: '', order: 4 },
+            { name: 'Rangoli Garden', pickupTime: '', order: 5 },
+            { name: 'Jaipur Bagh - Gandhi Path', pickupTime: '', order: 6 },
+            { name: 'Dhawas', pickupTime: '', order: 7 },
+            { name: 'Heerapura Power House', pickupTime: '', order: 8 },
+            { name: 'Jagdamba Nagar', pickupTime: '', order: 9 },
+            { name: 'Girdharipura', pickupTime: '', order: 10 },
+            { name: 'Kamla Nehru Nagar', pickupTime: '', order: 11 },
+            { name: 'Bhankrota', pickupTime: '', order: 12 },
+            { name: 'JKLU Campus', pickupTime: '', order: 13 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
+    },
+    {
+        routeNumber: 'Route 12',
+        routeName: 'Triveni - Mahesh Nagar',
+        vehicleNumber: 'RJ14PE8292',
+        driverName: 'KARAN SINGH',
+        driverPhone: '8107174925',
+        firstPickupPoint: 'Mahesh Nagar, Railway Crossing',
+        stops: [
+            { name: 'Mahesh Nagar Phatak', pickupTime: '', order: 1 },
+            { name: 'Arjun Nagar Phatak', pickupTime: '', order: 2 },
+            { name: 'Triveni Chouraha', pickupTime: '', order: 3 },
+            { name: '10-B Scheme', pickupTime: '', order: 4 },
+            { name: 'Riddhi Siddhi', pickupTime: '', order: 5 },
+            { name: 'Mahesh Nagar Mod', pickupTime: '', order: 6 },
+            { name: 'Gurjar Ki Thadi', pickupTime: '', order: 7 },
+            { name: 'New Sanganer Road', pickupTime: '', order: 8 },
+            { name: 'Sodala', pickupTime: '', order: 9 },
+            { name: 'Shyam Nagar Sabji Mandi', pickupTime: '', order: 10 },
+            { name: 'Sevayatan Hospital', pickupTime: '', order: 11 },
+            { name: 'Purani Chungi', pickupTime: '', order: 12 },
+            { name: 'Queens Road', pickupTime: '', order: 13 },
+            { name: 'Vijay Dwar', pickupTime: '', order: 14 },
+            { name: 'Gandhi Path', pickupTime: '', order: 15 },
+            { name: 'Global Hospital', pickupTime: '', order: 16 },
+            { name: 'SBI Circle', pickupTime: '', order: 17 },
+            { name: 'Chitrakoot', pickupTime: '', order: 18 },
+            { name: 'Karni Vihar Thana', pickupTime: '', order: 19 },
+            { name: 'Highway Kings', pickupTime: '', order: 20 },
+            { name: 'Kamla Nagar', pickupTime: '', order: 21 },
+            { name: 'Bhankrota', pickupTime: '', order: 22 },
+            { name: 'JKLU Campus', pickupTime: '', order: 23 }
+        ],
+        arrivalAtJKLU: '8:15 AM',
+        departureFromJKLU: '5:00 PM',
+        capacity: 50,
+        status: 'scheduled'
     }
 ];
 
-async function seedBusRoutes() {
+const seedBuses = async () => {
     try {
-        if (!process.env.MONGODB_URI) {
-            console.error('❌ MONGODB_URI is not set in env');
-            process.exit(1);
-        }
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ Connected to MongoDB');
+        await mongoose.connect(MONGO_URI);
+        console.log('Connected to MongoDB');
 
-        console.log('Clearing existing bus routes...');
         await Bus.deleteMany({});
-        console.log('Bus routes cleared.');
+        console.log('Cleared existing Bus collection');
 
-        for (const route of busRoutes) {
-            const newRoute = new Bus(route);
-            await newRoute.save();
-            console.log(`Created route ${route.routeNumber}: ${route.routeName}`);
-        }
-        
-        console.log('\n--- ALL BUS SHUTTLES SEEDED SUCCESSFULLY ---');
+        const insertedBuses = await Bus.insertMany(busRoutes);
+        console.log(`Successfully inserted ${insertedBuses.length} bus routes.`);
+
+        await mongoose.connection.close();
+        console.log('Disconnected from MongoDB');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Seeding bus routes failed:', error);
+        console.error('Error seeding Bus data:', error);
         process.exit(1);
     }
-}
+};
 
-seedBusRoutes();
+seedBuses();

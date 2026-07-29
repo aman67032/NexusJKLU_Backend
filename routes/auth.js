@@ -3,11 +3,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
+import Bus from '../models/Bus.js';
 import { authLimiter } from '../middleware/security.js';
 import { authenticate } from '../middleware/auth.js';
+import { generateOTP, sendOTPEmail } from '../services/emailService.js';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import crypto from 'crypto';
 
 dotenv.config();
 
@@ -15,14 +16,27 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
 const TOKEN_EXPIRY = '24h';
 
-// Nodemailer Transporter Setup
-const transporter = nodemailer.createTransport({
-    service: 'gmail', // You can change this to match your env config
-    auth: {
-        user: process.env.SMTP_USER || process.env.GMAIL_USER,
-        pass: process.env.SMTP_PASS || process.env.GMAIL_PASS,
-    },
-});
+// Helper to format user response
+const formatUser = async (user) => {
+    const formatted = {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        roles: user.roles,
+        emailVerified: user.emailVerified,
+        profile: user.profile,
+        createdAt: user.createdAt,
+        rollNumber: user.rollNumber,
+        jkluEmail: user.jkluEmail,
+        studentType: user.studentType,
+        pickupPoint: user.pickupPoint,
+        hostelName: user.hostelName,
+        roomNumber: user.roomNumber,
+        priorityMatrix: user.priorityMatrix,
+        busRoute: user.busRoute
+    };
+    return formatted;
+};
 
 // Generate JWT token
 const generateToken = (user) => {
@@ -38,13 +52,21 @@ const generateToken = (user) => {
     );
 };
 
-// POST /api/auth/register
+// POST /register
 router.post('/register',
     authLimiter,
     [
-        body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+        body('email').isEmail().normalizeEmail().withMessage('Valid email required')
+            .custom(value => {
+                if (!value.endsWith('@jklu.edu.in')) {
+                    throw new Error('Email must be @jklu.edu.in');
+                }
+                return true;
+            }),
         body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
         body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+        body('rollNumber').notEmpty().withMessage('Roll number is required'),
+        body('studentType').isIn(['dayscholar', 'hosteler']).withMessage('Student type must be dayscholar or hosteler')
     ],
     async (req, res) => {
         try {
@@ -53,43 +75,61 @@ router.post('/register',
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const { email, name, password } = req.body;
+            const { email, name, password, rollNumber, studentType, busRoute, pickupPoint, hostelName, roomNumber, priorityMatrix } = req.body;
 
             // Check existing user
-            const existingUser = await User.findOne({ email: email.toLowerCase() });
+            const existingUser = await User.findOne({ 
+                $or: [
+                    { email: email.toLowerCase() },
+                    { rollNumber }
+                ]
+            });
             if (existingUser) {
-                return res.status(400).json({ error: 'Email already registered' });
+                return res.status(400).json({ error: 'Email or Roll Number already registered' });
             }
 
             // Hash password
             const salt = await bcrypt.genSalt(12);
             const passwordHash = await bcrypt.hash(password, salt);
 
+            // Generate OTP
+            const otpCode = generateOTP();
+
             // Create user
             const user = new User({
                 email: email.toLowerCase(),
+                jkluEmail: email.toLowerCase(),
                 name,
+                rollNumber,
                 passwordHash,
+                studentType,
+                busRoute,
+                pickupPoint,
+                hostelName,
+                roomNumber,
+                priorityMatrix,
                 roles: ['student'],
+                emailVerified: false,
+                emailOtp: otpCode,
+                emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000)
             });
 
             await user.save();
 
-            // Generate token
-            const token = generateToken(user);
+            // Handle dayscholar bus assignment
+            if (studentType === 'dayscholar' && busRoute) {
+                await Bus.findByIdAndUpdate(busRoute, {
+                    $addToSet: { enrolledStudents: user._id }
+                });
+            }
+
+            // Send OTP
+            await sendOTPEmail(user.email, otpCode);
 
             res.status(201).json({
-                access_token: token,
-                token_type: 'bearer',
-                user: {
-                    id: user._id,
-                    email: user.email,
-                    name: user.name,
-                    roles: user.roles,
-                    emailVerified: user.emailVerified,
-                    profile: user.profile,
-                    createdAt: user.createdAt,
-                },
+                success: true,
+                message: 'OTP sent to your JKLU email',
+                userId: user._id
             });
         } catch (error) {
             console.error('Registration error:', error);
@@ -98,7 +138,82 @@ router.post('/register',
     }
 );
 
-// POST /api/auth/login
+// POST /verify-otp
+router.post('/verify-otp',
+    authLimiter,
+    [
+        body('email').isEmail().normalizeEmail(),
+        body('otp').isString().isLength({ min: 6, max: 6 })
+    ],
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+            const { email, otp } = req.body;
+            const user = await User.findOne({ email: email.toLowerCase() }).populate('busRoute');
+
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            if (user.emailOtp !== otp || !user.emailOtpExpiry || user.emailOtpExpiry < new Date()) {
+                return res.status(400).json({ error: 'Invalid or expired OTP' });
+            }
+
+            user.emailVerified = true;
+            user.emailOtp = undefined;
+            user.emailOtpExpiry = undefined;
+            await user.save();
+
+            const token = generateToken(user);
+            const userResponse = await formatUser(user);
+
+            res.json({
+                access_token: token,
+                token_type: 'bearer',
+                user: userResponse
+            });
+
+        } catch (error) {
+            console.error('Verify OTP error:', error);
+            res.status(500).json({ error: 'Failed to verify OTP' });
+        }
+    }
+);
+
+// POST /resend-otp
+router.post('/resend-otp',
+    authLimiter,
+    [body('email').isEmail().normalizeEmail()],
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+            const { email } = req.body;
+            const user = await User.findOne({ email: email.toLowerCase() });
+
+            if (!user) {
+                return res.json({ success: true, message: 'If email exists, a new OTP has been sent' });
+            }
+
+            const otpCode = generateOTP();
+            user.emailOtp = otpCode;
+            user.emailOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+            await user.save();
+
+            await sendOTPEmail(user.email, otpCode);
+
+            res.json({ success: true, message: 'New OTP sent successfully' });
+        } catch (error) {
+            console.error('Resend OTP error:', error);
+            res.status(500).json({ error: 'Failed to resend OTP' });
+        }
+    }
+);
+
+// POST /login
 router.post('/login',
     authLimiter,
     [
@@ -114,33 +229,27 @@ router.post('/login',
 
             const { email, password } = req.body;
 
-            // Find user
-            const user = await User.findOne({ email: email.toLowerCase() });
+            const user = await User.findOne({ email: email.toLowerCase() }).populate('busRoute');
             if (!user) {
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
-            // Check password
+            if (!user.emailVerified) {
+                return res.status(403).json({ error: 'Please verify your email first' });
+            }
+
             const isValid = await bcrypt.compare(password, user.passwordHash);
             if (!isValid) {
                 return res.status(401).json({ error: 'Invalid email or password' });
             }
 
-            // Generate token
             const token = generateToken(user);
+            const userResponse = await formatUser(user);
 
             res.json({
                 access_token: token,
                 token_type: 'bearer',
-                user: {
-                    id: user._id,
-                    email: user.email,
-                    name: user.name,
-                    roles: user.roles,
-                    emailVerified: user.emailVerified,
-                    profile: user.profile,
-                    createdAt: user.createdAt,
-                },
+                user: userResponse
             });
         } catch (error) {
             console.error('Login error:', error);
@@ -149,7 +258,54 @@ router.post('/login',
     }
 );
 
-// POST /api/auth/send-otp
+// GET /me
+router.get('/me', authenticate, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).populate('busRoute');
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userResponse = await formatUser(user);
+        res.json(userResponse);
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).json({ error: 'Failed to get user' });
+    }
+});
+
+// PUT /profile
+router.put('/profile', authenticate, async (req, res) => {
+    try {
+        const updateData = req.body;
+        // Don't allow updating sensitive fields
+        delete updateData.passwordHash;
+        delete updateData.emailOtp;
+        delete updateData.emailOtpExpiry;
+        delete updateData.resetOtp;
+        delete updateData.resetOtpExpiry;
+        delete updateData.emailVerified;
+        delete updateData.roles;
+        
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { $set: updateData },
+            { new: true }
+        ).populate('busRoute');
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userResponse = await formatUser(user);
+        res.json(userResponse);
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+// Keep reset password route logic
 router.post('/send-otp',
     authLimiter,
     [body('email').isEmail().normalizeEmail()],
@@ -162,41 +318,15 @@ router.post('/send-otp',
             const user = await User.findOne({ email: email.toLowerCase() });
 
             if (!user) {
-                // Prevent email enumeration
                 return res.json({ message: 'If the email exists, an OTP has been sent.' });
             }
 
-            // Generate 6-digit OTP
-            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-            // Set expiry to 10 minutes from now
+            const otpCode = generateOTP();
             user.resetOtp = otpCode;
             user.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
             await user.save();
 
-            // Send Email
-            const mailOptions = {
-                from: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.GMAIL_USER,
-                to: user.email,
-                subject: 'NexusJKLU - Password Reset OTP',
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-w-md; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
-                        <h2 style="color: #3b82f6;">NexusJKLU Password Reset</h2>
-                        <p>You requested a password reset. Your One-Time Password (OTP) is:</p>
-                        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
-                            <span style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #111827;">${otpCode}</span>
-                        </div>
-                        <p style="color: #6b7280; font-size: 14px;">This code will expire in 10 minutes.</p>
-                        <p style="color: #6b7280; font-size: 14px;">If you did not request this, please ignore this email.</p>
-                    </div>
-                `,
-            };
-
-            if (process.env.SMTP_USER || process.env.GMAIL_USER) {
-                await transporter.sendMail(mailOptions);
-            } else {
-                console.log(`[DEV MODE] OTP for ${user.email} is: ${otpCode}`);
-            }
+            await sendOTPEmail(user.email, otpCode);
 
             res.json({ message: 'OTP sent successfully' });
 
@@ -207,55 +337,6 @@ router.post('/send-otp',
     }
 );
 
-// POST /api/auth/verify-otp (Optional pre-check before reset, or auto-login for legacy flow)
-router.post('/verify-otp',
-    authLimiter,
-    [
-        body('email').isEmail().normalizeEmail(),
-        body('otp').isString().isLength({ min: 6, max: 6 })
-    ],
-    async (req, res) => {
-        try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-            const { email, otp } = req.body;
-            const user = await User.findOne({ email: email.toLowerCase() });
-
-            if (!user || user.resetOtp !== otp || !user.resetOtpExpiry || user.resetOtpExpiry < new Date()) {
-                return res.status(400).json({ error: 'Invalid or expired OTP' });
-            }
-
-            // Legacy flow issued a token immediately upon OTP verification
-            // Generating token
-            const token = generateToken(user);
-
-            // Mark email as verified if it wasn't already
-            if (!user.emailVerified) {
-                user.emailVerified = true;
-                await user.save();
-            }
-
-            res.json({
-                message: 'OTP verified successfully',
-                access_token: token,
-                token_type: 'bearer',
-                user: {
-                    id: user._id,
-                    email: user.email,
-                    name: user.name,
-                    roles: user.roles,
-                }
-            });
-
-        } catch (error) {
-            console.error('Verify OTP error:', error);
-            res.status(500).json({ error: 'Failed to verify OTP' });
-        }
-    }
-);
-
-// POST /api/auth/reset-password
 router.post('/reset-password',
     authLimiter,
     [
@@ -275,15 +356,11 @@ router.post('/reset-password',
                 return res.status(400).json({ error: 'Invalid or expired OTP' });
             }
 
-            // Hash new password
             const salt = await bcrypt.genSalt(12);
             user.passwordHash = await bcrypt.hash(newPassword, salt);
-
-            // Clear OTP
             user.resetOtp = undefined;
             user.resetOtpExpiry = undefined;
             user.emailVerified = true;
-
             await user.save();
 
             res.json({ message: 'Password reset successfully' });
@@ -294,62 +371,5 @@ router.post('/reset-password',
         }
     }
 );
-
-// GET /api/auth/me — Get current user
-router.get('/me', authenticate, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-passwordHash -resetOtp -resetOtpExpiry');
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        res.json({
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            roles: user.roles,
-            emailVerified: user.emailVerified,
-            idVerified: user.idVerified,
-            profile: user.profile,
-            createdAt: user.createdAt,
-        });
-    } catch (error) {
-        console.error('Get user error:', error);
-        res.status(500).json({ error: 'Failed to get user' });
-    }
-});
-
-// PUT /api/auth/profile — Update profile
-router.put('/profile', authenticate, async (req, res) => {
-    try {
-        const { name, profile } = req.body;
-        const updateData = {};
-
-        if (name) updateData.name = name;
-        if (profile) updateData.profile = profile;
-
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $set: updateData },
-            { new: true, select: '-passwordHash -resetOtp -resetOtpExpiry' }
-        );
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        res.json({
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            roles: user.roles,
-            emailVerified: user.emailVerified,
-            profile: user.profile,
-        });
-    } catch (error) {
-        console.error('Update profile error:', error);
-        res.status(500).json({ error: 'Failed to update profile' });
-    }
-});
 
 export default router;

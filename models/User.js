@@ -56,6 +56,16 @@ const userSchema = new mongoose.Schema({
     adminFeedback: mongoose.Schema.Types.Mixed,
     resetOtp: String,
     resetOtpExpiry: Date,
+    rollNumber: { type: String, unique: true, sparse: true },
+    jkluEmail: { type: String, unique: true, sparse: true },
+    studentType: { type: String, enum: ['dayscholar', 'hosteler'] },
+    busRoute: { type: mongoose.Schema.Types.ObjectId, ref: 'Bus' },
+    pickupPoint: String,
+    hostelName: String,
+    roomNumber: String,
+    priorityMatrix: { type: [String], default: ['events', 'clubs', 'academic', 'sports'] },
+    emailOtp: String,
+    emailOtpExpiry: Date,
 }, {
     timestamps: true,
 });
