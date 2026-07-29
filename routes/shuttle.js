@@ -168,6 +168,26 @@ router.delete('/request/:id', authenticate, async (req, res) => {
     }
 });
 
+// PUT /api/shuttle/schedules/:id/location
+router.put('/schedules/:id/location', authenticate, requireRole('admin', 'super_admin', 'transport_coordinator', 'driver'), async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+        if (lat == null || lng == null) {
+            return res.status(400).json({ error: 'lat and lng are required' });
+        }
+        const shuttle = await Shuttle.findByIdAndUpdate(
+            req.params.id,
+            { $set: { currentLocation: { lat, lng, updatedAt: new Date() } } },
+            { new: true }
+        );
+        if (!shuttle) return res.status(404).json({ error: 'Shuttle not found' });
+        res.json(shuttle.currentLocation);
+    } catch (error) {
+        console.error('Update shuttle location error:', error);
+        res.status(500).json({ error: 'Failed to update location' });
+    }
+});
+
 // GET /api/shuttle/schedules/:id/location
 router.get('/schedules/:id/location', authenticate, async (req, res) => {
     try {
