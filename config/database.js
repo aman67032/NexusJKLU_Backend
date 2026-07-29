@@ -3,29 +3,37 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://solomaze67032_db_user:fQmA99z6lzPVbiAF@cluster0.lnefwyf.mongodb.net/nexusjklu';
 
-if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI environment variable is not set!');
-  process.exit(1);
+let cached = global.mongoose;
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
 }
 
 const connectDB = async () => {
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB Atlas');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    process.exit(1);
-  }
+    if (cached.conn) {
+        return cached.conn;
+    }
+
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false,
+        };
+
+        cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+            console.log('✅ Connected to MongoDB Atlas');
+            return m;
+        });
+    }
+
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        console.error('❌ MongoDB connection error:', e.message);
+    }
+
+    return cached.conn;
 };
-
-mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️ MongoDB disconnected');
-});
 
 export default connectDB;

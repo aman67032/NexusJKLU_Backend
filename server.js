@@ -140,7 +140,18 @@ app.use('*', (req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-// Connect to MongoDB and start server
+// Auto-connect DB middleware for serverless
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('DB middleware error:', err);
+        next();
+    }
+});
+
+// Connect to MongoDB and start server for local dev
 const startServer = async () => {
     try {
         await connectDB();
@@ -154,10 +165,11 @@ const startServer = async () => {
         });
     } catch (error) {
         console.error('Failed to start server:', error);
-        process.exit(1);
     }
 };
 
-startServer();
+if (!process.env.VERCEL) {
+    startServer();
+}
 
 export default app;
