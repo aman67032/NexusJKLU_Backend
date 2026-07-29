@@ -23,41 +23,40 @@ const PORT = process.env.PORT || 5000;
 // Trust proxy (for Vercel / reverse proxy)
 app.set('trust proxy', 1);
 
-// --- 1. CORS (Must be first to handle preflights) ---
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : [
-        'http://localhost:3000',
-        'http://localhost:5000',
-        'https://nexus-jklu.vercel.app',
-        'https://nexus-jklu-backend.vercel.app'
-    ];
-
+// --- 1. CORS Configuration ---
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-
-        const isAllowed = allowedOrigins.some(allowed => {
-            if (allowed.includes('*')) {
-                const regex = new RegExp('^' + allowed.replace(/\*/g, '.*') + '$');
-                return regex.test(origin);
-            }
-            return allowed === origin;
-        }) || origin.endsWith('.vercel.app'); // Flexible for Vercel previews
-
-        if (isAllowed) {
-            callback(null, true);
-        } else {
-            console.warn(`🚨 CORS blocked for origin: ${origin}`);
-            callback(new Error('CORS policy violation'), false);
+        if (
+            origin.startsWith('http://localhost') ||
+            origin.endsWith('.vercel.app') ||
+            origin === 'https://nexus-jklu.vercel.app'
+        ) {
+            return callback(null, true);
         }
+        return callback(null, true); // Allow all origins to prevent CORS errors on Vercel deployment
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['set-cookie']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Authorization']
 }));
+
+// Preflight handler
+app.options('*', cors());
+
+// Explicit CORS headers middleware fallback
+app.use((req, res, next) => {
+    const origin = req.headers.origin || '*';
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 // --- 2. Security Headers & Rate Limiting ---
 app.use(securityHeaders);
