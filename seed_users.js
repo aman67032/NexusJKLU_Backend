@@ -7,12 +7,6 @@ dotenv.config();
 
 const users = [
     {
-        email: 'amanpratapsingh@jklu.edu.in',
-        name: 'Amanpratap Singh',
-        password: 'Asujam@67',
-        roles: ['student']
-    },
-    {
         email: 'sysadmincta@jklu.edu.in',
         name: 'Super Admin',
         password: 'Asujam@67',
