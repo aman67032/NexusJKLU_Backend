@@ -3,9 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Globally disable command buffering so Mongoose fails fast with a clean error if DB is disconnected
-mongoose.set('bufferCommands', false);
-
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://solomaze67032_db_user:fQmA99z6lzPVbiAF@cluster0.lnefwyf.mongodb.net/nexusjklu';
 
 let cached = global.mongoose;
@@ -20,14 +17,18 @@ const connectDB = async () => {
 
     if (!cached.promise || mongoose.connection.readyState === 0) {
         const opts = {
-            bufferCommands: false,
-            serverSelectionTimeoutMS: 5000,
+            bufferCommands: true,
+            serverSelectionTimeoutMS: 15000,
             socketTimeoutMS: 45000,
+            maxPoolSize: 10,
         };
 
         cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
             console.log('✅ Connected to MongoDB Atlas');
             return m;
+        }).catch((err) => {
+            cached.promise = null;
+            throw err;
         });
     }
 
@@ -36,7 +37,7 @@ const connectDB = async () => {
     } catch (e) {
         cached.promise = null;
         console.error('❌ MongoDB connection error:', e.message);
-        throw new Error('Database connection failed. Please check MongoDB Atlas IP Whitelist.');
+        throw new Error(`Database connection failed: ${e.message}`);
     }
 
     return cached.conn;

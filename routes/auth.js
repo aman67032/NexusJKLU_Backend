@@ -76,7 +76,7 @@ router.post('/register',
                 return res.status(400).json({ errors: errors.array() });
             }
 
-            const { email, name, password, rollNumber, studentType, busRoute, pickupPoint, hostelName, roomNumber, priorityMatrix } = req.body;
+            const { email, name, password, rollNumber, studentType, busRoute, pickupPoint, hostelName, roomNumber, priorityMatrix, gender } = req.body;
 
             // Check existing user
             const existingUser = await User.findOne({ 
@@ -125,6 +125,11 @@ router.post('/register',
                 hostelName,
                 roomNumber,
                 priorityMatrix,
+                profile: {
+                    gender: gender || 'male',
+                    university: 'JKLU',
+                    rollNo: rollNumber
+                },
                 roles: ['student'],
                 emailVerified: false,
                 emailOtp: otpCode,
