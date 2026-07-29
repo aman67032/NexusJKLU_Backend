@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
@@ -95,6 +96,22 @@ router.post('/register',
             // Generate OTP
             const otpCode = generateOTP();
 
+            // Safely resolve busRoute ObjectId
+            let resolvedBusId = null;
+            if (studentType === 'dayscholar' && busRoute) {
+                if (mongoose.Types.ObjectId.isValid(busRoute)) {
+                    resolvedBusId = busRoute;
+                } else {
+                    const foundBus = await Bus.findOne({
+                        $or: [
+                            { routeNumber: new RegExp(busRoute, 'i') },
+                            { routeName: new RegExp(busRoute, 'i') }
+                        ]
+                    });
+                    if (foundBus) resolvedBusId = foundBus._id;
+                }
+            }
+
             // Create user
             const user = new User({
                 email: email.toLowerCase(),
@@ -103,7 +120,7 @@ router.post('/register',
                 rollNumber,
                 passwordHash,
                 studentType,
-                busRoute,
+                busRoute: resolvedBusId,
                 pickupPoint,
                 hostelName,
                 roomNumber,
@@ -117,10 +134,10 @@ router.post('/register',
             await user.save();
 
             // Handle dayscholar bus assignment
-            if (studentType === 'dayscholar' && busRoute) {
-                await Bus.findByIdAndUpdate(busRoute, {
+            if (resolvedBusId) {
+                await Bus.findByIdAndUpdate(resolvedBusId, {
                     $addToSet: { enrolledStudents: user._id }
-                });
+                }).catch(err => console.error('Bus enrollment error:', err));
             }
 
             // Send OTP
@@ -133,7 +150,7 @@ router.post('/register',
             });
         } catch (error) {
             console.error('Registration error:', error);
-            res.status(500).json({ error: 'Registration failed' });
+            res.status(500).json({ error: error.message || 'Registration failed' });
         }
     }
 );
