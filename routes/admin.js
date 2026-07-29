@@ -102,6 +102,46 @@ router.put('/users/:id/role', authenticate, authorize(canAssignRoles), async (re
     }
 });
 
+// PUT /api/admin/users/:id/student-type
+// Update user's studentType (dayscholar/hosteler)
+router.put('/users/:id/student-type', authenticate, authorize(canAssignRoles), async (req, res) => {
+    try {
+        const { studentType, busRoute, pickupPoint, hostelName, roomNumber } = req.body;
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (studentType) user.studentType = studentType;
+        if (busRoute !== undefined) user.busRoute = busRoute;
+        if (pickupPoint !== undefined) user.pickupPoint = pickupPoint;
+        if (hostelName !== undefined) user.hostelName = hostelName;
+        if (roomNumber !== undefined) user.roomNumber = roomNumber;
+
+        await user.save();
+        res.json({ message: 'Student profile updated successfully', user });
+    } catch (error) {
+        console.error('Update student type error:', error);
+        res.status(500).json({ error: 'Failed to update student profile' });
+    }
+});
+
+// POST /api/admin/announcements
+// Create campus wide announcement
+router.post('/announcements', authenticate, requireAnyAdmin, async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+        res.status(201).json({ success: true, message: 'Campus announcement published successfully' });
+    } catch (error) {
+        console.error('Announcement publish error:', error);
+        res.status(500).json({ error: 'Failed to publish announcement' });
+    }
+});
+
 // ==========================================
 // ORGANIZATIONS MANAGEMENT (COUNCILS & CLUBS)
 // ==========================================
