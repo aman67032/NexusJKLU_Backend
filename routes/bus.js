@@ -80,7 +80,7 @@ router.get('/attendance/my', authenticate, async (req, res) => {
 // ================= ADMIN ROUTES =================
 
 // PUT /api/bus/routes/:id/location
-router.put('/routes/:id/location', authenticate, requireRole('admin', 'transport_coordinator'), async (req, res) => {
+router.put('/routes/:id/location', authenticate, requireRole('admin', 'super_admin', 'transport_coordinator', 'driver'), async (req, res) => {
     try {
         const { lat, lng } = req.body;
         if (lat == null || lng == null) {
