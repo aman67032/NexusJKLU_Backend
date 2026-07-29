@@ -3,14 +3,14 @@ import { body, validationResult } from 'express-validator';
 import Shuttle from '../models/Shuttle.js';
 import ShuttleRequest from '../models/ShuttleRequest.js';
 import User from '../models/User.js';
-import { authenticate, requireRole } from '../middleware/auth.js';
+import { authenticate, optionalAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // ================= STUDENT ROUTES =================
 
 // GET /api/shuttle/schedules
-router.get('/schedules', authenticate, async (req, res) => {
+router.get('/schedules', optionalAuth, async (req, res) => {
     try {
         const shuttles = await Shuttle.find({ isActive: true }).sort({ schedule: 1 });
         res.json(shuttles);

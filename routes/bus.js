@@ -3,12 +3,12 @@ import { body, validationResult } from 'express-validator';
 import Bus from '../models/Bus.js';
 import BusAttendance from '../models/BusAttendance.js';
 import User from '../models/User.js';
-import { authenticate, requireRole } from '../middleware/auth.js';
+import { authenticate, optionalAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // GET /api/bus/routes
-router.get('/routes', authenticate, async (req, res) => {
+router.get('/routes', optionalAuth, async (req, res) => {
     try {
         const routesWithCount = await Bus.find({ isActive: true }).sort({ routeNumber: 1 });
         const response = routesWithCount.map(r => {
