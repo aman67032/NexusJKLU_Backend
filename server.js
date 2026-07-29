@@ -66,6 +66,17 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Auto-connect DB middleware for serverless
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('DB middleware connection error:', err);
+        return res.status(500).json({ error: 'Database connection timeout. Please verify MongoDB Atlas IP Whitelist.' });
+    }
+});
+
 // Input sanitization
 app.use(sanitizeInputs);
 
@@ -138,17 +149,6 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Route not found' });
-});
-
-// Auto-connect DB middleware for serverless
-app.use(async (req, res, next) => {
-    try {
-        await connectDB();
-        next();
-    } catch (err) {
-        console.error('DB middleware error:', err);
-        next();
-    }
 });
 
 // Connect to MongoDB and start server for local dev
